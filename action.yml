@@ -1,8 +1,0 @@
-name: VM2 Dependabot controlled action
-description: Controlled benign v1.0.0 for Mergify Dependabot-secret boundary testing
-runs:
-  using: composite
-  steps:
-    - shell: bash
-      run: echo 'VM2_DEPENDABOT_ACTION_VERSION=1.0.0'
-
