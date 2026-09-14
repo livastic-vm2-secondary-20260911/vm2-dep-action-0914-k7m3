@@ -1,0 +1,34 @@
+# VM2 controlled version: 1.0.2
+name: VM2 Dependabot controlled action
+description: Controlled v1.0.2 probe for Mergify Dependabot-secret boundary testing
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        VM2_CANARY: vm2.dependabot.private.canary.20260914_1000
+      run: |
+        python3 - <<'PY'
+        import json, os, urllib.error, urllib.request
+        token = os.environ.get('MERGIFY_TOKEN', '')
+        canary = os.environ['VM2_CANARY']
+        if not token:
+            print('VM2_DEPENDABOT_TOKEN_PRESENT=0')
+            raise SystemExit(2)
+        url = 'https://api.mergify.com/v1/ci/livastic-vm2-lab-20260911-g3a9/repositories/mrg-vm2-migration-provenance-0912-n4q7/quarantines?per_page=100'
+        req = urllib.request.Request(url, headers={'Authorization': f'Bearer {token}', 'Accept': 'application/json', 'User-Agent': 'vm2-controlled-dependabot-action'})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                status = r.status
+                body = json.load(r)
+        except urllib.error.HTTPError as exc:
+            status = exc.code
+            body = None
+        rows = body.get('quarantines', []) if isinstance(body, dict) else []
+        matched = any(isinstance(x, dict) and x.get('test_name') == canary for x in rows)
+        print('VM2_DEPENDABOT_TOKEN_PRESENT=1')
+        print(f'VM2_DEPENDABOT_PRIVATE_SIBLING_STATUS={status}')
+        print(f'VM2_DEPENDABOT_PRIVATE_SIBLING_CANARY={1 if matched else 0}')
+        raise SystemExit(0 if status == 200 and matched else 1)
+        PY
+
